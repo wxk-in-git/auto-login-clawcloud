@@ -35,7 +35,9 @@ def run_login():
         try:
             # 精确查找包含 'GitHub' 文本的按钮
             login_button = page.locator("button:has-text('GitHub')")
-            login_button.wait_for(state="visible", timeout=10000)
+            login_button.wait_for(state="visible", timeout=20000)
+            login_button.click()
+            login_button.click()
             login_button.click()
             print("✅ 按钮已点击")
         except Exception as e:
