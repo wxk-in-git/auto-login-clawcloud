@@ -236,6 +236,7 @@ def run_login():
 
         # 8. 截图保存结果（核心优化：确保页面加载完成后截图）
         try:
+            time.sleep(30)  # 兜底等待
             page.screenshot(path="login_result.png", full_page=True)  # full_page=True截取整页
             print("📸 已保存结果截图: login_result.png")
         except Exception as e:
