@@ -35,9 +35,7 @@ def run_login():
         try:
             # 精确查找包含 'GitHub' 文本的按钮
             login_button = page.locator("button:has-text('GitHub')")
-            login_button.wait_for(state="visible", timeout=20000)
-            login_button.click()
-            login_button.click()
+            login_button.wait_for(state="visible", timeout=30000)
             login_button.click()
             print("✅ 按钮已点击")
         except Exception as e:
@@ -47,7 +45,7 @@ def run_login():
         print("⏳ [Step 4] 等待跳转到 GitHub...")
         try:
             # 等待 URL 变更为 github.com
-            page.wait_for_url(lambda url: "github.com" in url, timeout=15000)
+            page.wait_for_url(lambda url: "github.com" in url, timeout=30000)
             
             # 如果是在登录页，则填写账号密码
             if "login" in page.url:
@@ -89,7 +87,7 @@ def run_login():
 
         # 6. 处理授权确认页 (Authorize App)
         # 第一次登录可能会出现
-        page.wait_for_timeout(3000)
+        page.wait_for_timeout(5000)
         if "authorize" in page.url.lower():
             print("⚠️ 检测到授权请求，尝试点击 Authorize...")
             try:
@@ -100,7 +98,7 @@ def run_login():
         # 7. 等待最终跳转结果
         print("⏳ [Step 6] 等待跳转回 ClawCloud 控制台 (约20秒)...")
         # 强制等待较长时间，确保页面完全重定向
-        page.wait_for_timeout(20000)
+        page.wait_for_timeout(30000)
         
         final_url = page.url
         print(f"📍 最终页面 URL: {final_url}")
