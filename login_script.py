@@ -29,6 +29,7 @@ def run_login():
         print(f"🌐 [Step 2] 正在访问: {target_url}")
         page.goto(target_url)
         page.wait_for_load_state("networkidle")
+        time.sleep(10)
 
         # 3. 点击 GitHub 登录按钮
         print("🔍 [Step 3] 寻找 GitHub 按钮...")
