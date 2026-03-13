@@ -38,6 +38,7 @@ def run_login():
         print(f"? [Step 2] 正在访问: {target_url}")
         page.goto(target_url)
         page.wait_for_load_state("networkidle", timeout=20000)
+        time.sleep(10)
 
         # 3. 点击 GitHub 登录按钮
         print("? [Step 3] 寻找 GitHub 按钮...")
@@ -45,6 +46,7 @@ def run_login():
             # 精确查找包含 'GitHub' 文本的按钮
             login_button = page.locator("button:has-text('GitHub')")
             login_button.wait_for(state="visible", timeout=10000)
+            time.sleep(10)
             login_button.click()
             print("? 按钮已点击")
         except Exception as e:
@@ -55,19 +57,22 @@ def run_login():
         try:
             # 等待 URL 变更为 github.com
             page.wait_for_url(lambda url: "github.com" in url, timeout=30000)
-
+            time.sleep(10)
+            
             # 如果是在登录页，则填写账号密码
             if "login" in page.url:
                 print("? 输入账号密码...")
                 page.fill("#login_field", username)
                 page.fill("#password", password)
                 page.click("input[name='commit']")  # 点击登录按钮
+                time.sleep(10)
                 print("? 登录表单已提交")
         except Exception as e:
             print(f"?? 跳过账号密码填写 (可能已自动登录): {e}")
 
         # 5. 【核心】处理 2FA 双重验证 (解决异地登录拦截)
         page.wait_for_timeout(3000)
+        time.sleep(10)
 
         # 检查 URL 是否包含 two-factor 或页面是否有验证码输入框
         if "two-factor" in page.url or page.locator("#app_totp").count() > 0:
