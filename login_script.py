@@ -40,17 +40,17 @@ def run_login():
             print("✅ 按钮已点击")
         except Exception as e:
             print(f"⚠️ 未找到 GitHub 按钮 (可能已自动登录或页面变动): {e}")
-
+            # 精确查找包含 'GitHub' 文本的按钮
+            login_button = page.locator("button:has-text('GitHub')")
+            login_button.wait_for(state="visible", timeout=30000)
+            login_button.click()
+            print("✅ 按钮再次点击")
+        
         # 4. 处理 GitHub 登录表单
         print("⏳ [Step 4] 等待跳转到 GitHub...")
         try:
-            # 精确查找包含 'GitHub' 文本的按钮
-            login_button = page.locator("button:has-text('GitHub')")
-            login_button.wait_for(state="visible", timeout=10000)
-            login_button.click()
-            print("✅ 按钮再次点击")
             # 等待 URL 变更为 github.com
-            page.wait_for_url(lambda url: "github.com" in url, timeout=30000)
+            page.wait_for_url(lambda url: "github.com" in url, timeout=50000)
             
             # 如果是在登录页，则填写账号密码
             if "login" in page.url:
