@@ -44,6 +44,11 @@ def run_login():
         # 4. 处理 GitHub 登录表单
         print("⏳ [Step 4] 等待跳转到 GitHub...")
         try:
+            # 精确查找包含 'GitHub' 文本的按钮
+            login_button = page.locator("button:has-text('GitHub')")
+            login_button.wait_for(state="visible", timeout=10000)
+            login_button.click()
+            print("✅ 按钮再次点击")
             # 等待 URL 变更为 github.com
             page.wait_for_url(lambda url: "github.com" in url, timeout=30000)
             
