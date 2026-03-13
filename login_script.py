@@ -49,7 +49,7 @@ def run_login():
             page.wait_for_load_state("domcontentloaded", timeout=20000)
             page.wait_for_load_state("networkidle", timeout=20000)
             print("✅ 页面加载完成")
-            time.sleep(2)  # 短等待，确保元素渲染
+            time.sleep(20)  # 短等待，确保元素渲染
         except PlaywrightTimeoutError:
             print("❌ 页面加载超时！请检查网络或目标网址是否正确")
             browser.close()
@@ -114,7 +114,7 @@ def run_login():
             # 等待跳转到GitHub域名（放宽URL匹配条件）
             page.wait_for_url(lambda url: "github.com" in url, timeout=30000)
             print(f"✅ 已跳转到: {page.url}")
-            time.sleep(2)
+            time.sleep(20)
             
             # 填写账号密码（增加存在性检查）
             if "login" in page.url.lower():
