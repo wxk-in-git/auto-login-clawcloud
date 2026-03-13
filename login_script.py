@@ -22,7 +22,7 @@ def run_login():
         # 关键修改：headless=False 让浏览器前台显示
         # 添加 slow_mo 放慢操作速度，便于观察执行过程
         browser = p.chromium.launch(
-            headless=False,  # 前台显示浏览器（核心修改）
+            headless=True,  # 前台显示浏览器（核心修改）
             slow_mo=1000,  # 每个操作延迟1秒，方便查看
             args=[
                 "--start-maximized",  # 浏览器最大化显示
