@@ -24,7 +24,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install playwright pyotp
           # 仅安装chromium，减少下载时间，同时用国内镜像加速
-          PLAYWRIGHT_DOWNLOAD_HOST=https://mirrors.tuna.tsinghua.edu.cn/playwright/ playwright install chromium
+          playwright install chromium
 
       - name: Create Screenshot Directory (Ensure Exists)
         run: |
