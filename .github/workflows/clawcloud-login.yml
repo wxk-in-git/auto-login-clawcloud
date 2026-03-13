@@ -3,8 +3,8 @@ name: ClawCloud Run Auto Login (2FA Support)
 
 on:
   schedule:
-    - cron: '0 0 */15 * *'
-  workflow_dispatch:
+    - cron: '0 0 */15 * *'  # 每15天执行一次
+  workflow_dispatch:        # 手动触发
 
 jobs:
   auto-login:
@@ -23,19 +23,32 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install playwright pyotp
-          playwright install
+          # 使用国内镜像加速playwright浏览器驱动安装（可选，提升速度）
+          playwright install chromium
 
       - name: Run Login Script
         env:
           GH_USERNAME: ${{ secrets.GH_USERNAME }}
           GH_PASSWORD: ${{ secrets.GH_PASSWORD }}
           GH_2FA_SECRET: ${{ secrets.GH_2FA_SECRET }}
-        
+          CI: "true"  # 明确标记CI环境，让脚本适配无头模式
         run: python -u login_script.py
 
-      - name: Upload Debug Screenshot
-        if: always()
+      - name: Upload All Screenshots
+        if: always()  # 无论脚本执行成功/失败，都上传截图
         uses: actions/upload-artifact@v4
         with:
-          name: login-result
-          path: login_result.png
+          name: all-login-screenshots  # 产物名称，便于识别
+          path: |  # 上传所有截图文件
+            login_result.png           # 最终结果截图
+            screenshots/               # 所有步骤的截图目录（包含子文件）
+          retention-days: 3  # 截图保留7天，可按需调整（默认90天）
+
+      - name: List Screenshot Files (Debug)
+        if: always()
+        run: |
+          # 打印文件列表，确认截图已生成（便于调试）
+          echo "=== 生成的截图文件列表 ==="
+          ls -la login_result.png || echo "login_result.png 不存在"
+          ls -la screenshots/ || echo "screenshots 目录不存在"
+          ls -la screenshots/* || echo "screenshots 目录下无文件"
