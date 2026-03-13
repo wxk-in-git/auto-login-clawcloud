@@ -1,6 +1,7 @@
 # 文件名: login_script.py
 # 作用: 自动登录 ClawCloud Run，支持 GitHub 账号密码 + 2FA 自动验证
 import os
+import sys
 import time
 import pyotp  # 用于生成 2FA 验证码
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
@@ -18,10 +19,11 @@ def run_login():
 
     print("✅ [Step 1] 启动浏览器...")
     with sync_playwright() as p:
-        # 关键修复：headless=False 改为显式False（原代码注释和值冲突）
+        # 关键配置：根据运行环境自动调整headless（CI环境用无头模式）
+        is_ci_env = os.environ.get("CI") == "true" or not sys.stdout.isatty()
         browser = p.chromium.launch(
-            headless=True,  # 前台显示浏览器，便于调试
-            slow_mo=500,     # 每个操作延迟500ms，平衡速度和稳定性
+            headless=is_ci_env,  # CI环境无头运行，本地环境显示浏览器
+            slow_mo=500,         # 每个操作延迟500ms，平衡速度和稳定性
             args=[
                 "--start-maximized",  # 浏览器最大化
                 "--no-sandbox",       # 解决权限问题
@@ -215,18 +217,31 @@ def run_login():
                 print(f"❌ 授权按钮点击失败: {str(e)}")
                 page.screenshot(path="authorize_fail.png")
 
-        # 7. 等待最终跳转结果
-        print("✅ [Step 7] 等待跳转回 ClawCloud 控制台...")
-        page.wait_for_timeout(5000)  # 缩短等待时间，提高效率
+        # 7. 等待最终页面加载完成（核心优化：延长等待+等待加载状态）
+        print("✅ [Step 7] 等待 ClawCloud 控制台完全加载...")
+        try:
+            # 等待页面跳回ClawCloud且网络空闲
+            page.wait_for_url(lambda url: "run.claw.cloud" in url and "github.com" not in url, timeout=30000)
+            # 等待页面完全加载（networkidle确保没有加载中的请求）
+            page.wait_for_load_state("networkidle", timeout=20000)
+            # 额外等待2秒，确保动态内容渲染完成（避免加载圆圈）
+            time.sleep(2)
+            print("✅ ClawCloud 控制台加载完成")
+        except PlaywrightTimeoutError:
+            print("⚠️ 控制台加载超时，但登录流程已完成，继续截图")
+            time.sleep(3)  # 兜底等待
 
         final_url = page.url
         print(f"📌 最终页面 URL: {final_url}")
 
-        # 截图保存结果
-        page.screenshot(path="login_result.png")
-        print("📸 已保存结果截图: login_result.png")
+        # 8. 截图保存结果（核心优化：确保页面加载完成后截图）
+        try:
+            page.screenshot(path="login_result.png", full_page=True)  # full_page=True截取整页
+            print("📸 已保存结果截图: login_result.png")
+        except Exception as e:
+            print(f"⚠️ 截图失败: {str(e)}")
 
-        # 8. 验证是否成功
+        # 9. 验证是否成功
         success_indicators = [
             page.get_by_text("App Launchpad").count() > 0,
             page.get_by_text("Devbox").count() > 0,
@@ -238,12 +253,20 @@ def run_login():
 
         if is_success:
             print("🎉 登录成功！任务完成。")
-            input("按 Enter 键关闭浏览器...")
         else:
             print("❌ 登录失败！请查看 login_result.png 排查原因。")
-            input("按 Enter 键关闭浏览器...")
             exit(1)
 
+        # 核心修复：移除input()，根据环境决定是否保持浏览器打开
+        if not is_ci_env:
+            # 仅本地交互式环境显示等待输入
+            try:
+                input("按 Enter 键关闭浏览器...")
+            except EOFError:
+                print("\n⚠️ 非交互式环境，自动关闭浏览器")
+        else:
+            print("✅ CI环境运行，自动关闭浏览器")
+        
         browser.close()
 
 
