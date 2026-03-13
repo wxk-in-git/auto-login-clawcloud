@@ -41,7 +41,7 @@ def run_login():
         page = context.new_page()
 
         # 2. 访问 ClawCloud 登录页（增加异常处理）
-        target_url = "https://ap-northeast-1.run.claw.cloud/"
+        target_url = "https://ap-southeast-1.run.claw.cloud/"
         print(f"✅ [Step 2] 正在访问: {target_url}")
         try:
             page.goto(target_url, timeout=30000)
@@ -229,7 +229,7 @@ def run_login():
             print("✅ ClawCloud 控制台加载完成")
         except PlaywrightTimeoutError:
             print("⚠️ 控制台加载超时，但登录流程已完成，继续截图")
-            time.sleep(10)  # 兜底等待
+            time.sleep(30)  # 兜底等待
 
         final_url = page.url
         print(f"📌 最终页面 URL: {final_url}")
