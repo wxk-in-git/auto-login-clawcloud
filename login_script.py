@@ -224,8 +224,8 @@ def run_login():
             page.wait_for_url(lambda url: "run.claw.cloud" in url and "github.com" not in url, timeout=30000)
             # 等待页面完全加载（networkidle确保没有加载中的请求）
             page.wait_for_load_state("networkidle", timeout=20000)
-            # 额外等待10秒，确保动态内容渲染完成（避免加载圆圈）
-            time.sleep(12)
+            # 额外等待2秒，确保动态内容渲染完成（避免加载圆圈）
+            time.sleep(10)
             print("✅ ClawCloud 控制台加载完成")
             
             # ========== 新增：判断页面是否包含"wxk-in-git" ==========
@@ -244,14 +244,11 @@ def run_login():
                 print("✅ 页面中检测到 'wxk-in-git' 文本")
             else:
                 print("❌ 页面中未检测到 'wxk-in-git' 文本")
-                # 可选：如果需要严格验证，这里可以直接退出
-                # exit(1)
-            # ======================================================
-            
+        
         except PlaywrightTimeoutError:
-            print("⚠️ 控制台加载超时，但登录流程已完成，继续截图和检查")
+            print("⚠️ 控制台加载超时，但登录流程已完成，继续截图")
             time.sleep(3)  # 兜底等待
-
+        
         final_url = page.url
         print(f"📌 最终页面 URL: {final_url}")
 
@@ -262,14 +259,13 @@ def run_login():
         except Exception as e:
             print(f"⚠️ 截图失败: {str(e)}")
 
-        # 9. 验证是否成功（整合wxk-in-git判断）
+        # 9. 验证是否成功
         success_indicators = [
             page.get_by_text("App Launchpad").count() > 0,
             page.get_by_text("Devbox").count() > 0,
             "private-team" in final_url,
             "console" in final_url,
-            "signin" not in final_url and "github.com" not in final_url,
-            has_wxk_text  # 新增：包含wxk-in-git作为成功指标之一
+            "signin" not in final_url and "github.com" not in final_url
         ]
         is_success = any(success_indicators)
 
