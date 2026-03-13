@@ -54,8 +54,9 @@ def run_login():
             login_button.click()
             print("✅ 按钮再次点击1")            
             # 等待 URL 变更为 github.com
-            page.wait_for_url(lambda url: "github.com" in url, timeout=50000)
-            
+            page.wait_for_url(lambda url: "github.com" in url, timeout=30000)
+            time.sleep(10)
+
             # 如果是在登录页，则填写账号密码
             if "login" in page.url:
                 print("🔒 输入账号密码...")
