@@ -12,10 +12,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4  # 升级到v4，解决Node.js 20弃用警告
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5  # 升级到v5，适配新版Actions
         with:
           python-version: '3.9'
 
@@ -23,32 +23,56 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install playwright pyotp
-          # 使用国内镜像加速playwright浏览器驱动安装（可选，提升速度）
-          playwright install chromium
+          # 仅安装chromium，减少下载时间，同时用国内镜像加速
+          PLAYWRIGHT_DOWNLOAD_HOST=https://mirrors.tuna.tsinghua.edu.cn/playwright/ playwright install chromium
 
-      - name: Run Login Script
+      - name: Create Screenshot Directory (Ensure Exists)
+        run: |
+          # 提前创建截图目录，避免脚本失败时目录不存在
+          mkdir -p screenshots
+          # 创建空的日志文件，用于记录脚本执行信息
+          touch screenshots/script_execution.log
+        shell: bash
+
+      - name: Run Login Script (Capture Logs)
         env:
           GH_USERNAME: ${{ secrets.GH_USERNAME }}
           GH_PASSWORD: ${{ secrets.GH_PASSWORD }}
           GH_2FA_SECRET: ${{ secrets.GH_2FA_SECRET }}
-          CI: "true"  # 明确标记CI环境，让脚本适配无头模式
-        run: python -u login_script.py
+          CI: "true"
+        run: |
+          # 执行脚本并把所有日志输出到文件，同时保留终端输出
+          python -u login_script.py 2>&1 | tee screenshots/script_execution.log
+        shell: bash
 
-      - name: Upload All Screenshots
-        if: always()  # 无论脚本执行成功/失败，都上传截图
-        uses: actions/upload-artifact@v4
-        with:
-          name: all-login-screenshots  # 产物名称，便于识别
-          path: |  # 上传所有截图文件
-            login_result.png           # 最终结果截图
-            screenshots/               # 所有步骤的截图目录（包含子文件）
-          retention-days: 3  # 截图保留7天，可按需调整（默认90天）
-
-      - name: List Screenshot Files (Debug)
+      - name: List All Files (Debug)
         if: always()
         run: |
-          # 打印文件列表，确认截图已生成（便于调试）
-          echo "=== 生成的截图文件列表 ==="
-          ls -la login_result.png || echo "login_result.png 不存在"
-          ls -la screenshots/ || echo "screenshots 目录不存在"
-          ls -la screenshots/* || echo "screenshots 目录下无文件"
+          # 打印工作目录所有文件，确认文件结构
+          echo "=== Working Directory Files ==="
+          ls -la
+          echo "=== Screenshots Directory Files ==="
+          ls -la screenshots/
+        shell: bash
+
+      - name: Upload All Screenshots and Logs
+        if: always()  # 无论失败/成功都执行
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-login-debug-files
+          path: |
+            # 上传截图（即使为空）
+            login_result.png
+            screenshots/
+            # 上传脚本执行日志（关键：捕获早期失败原因）
+            screenshots/script_execution.log
+          retention-days: 7
+          if-no-files-found: error  # 无文件时标记为错误，更醒目（可选：改为warn则仅警告）
+
+      - name: Print Script Execution Log (Debug)
+        if: always()
+        run: |
+          # 直接打印日志到Actions控制台，快速排查
+          echo "=== Script Execution Log ==="
+          cat screenshots/script_execution.log || echo "Log file not found"
+        shell: bash
