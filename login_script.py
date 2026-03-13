@@ -41,7 +41,7 @@ def run_login():
         page = context.new_page()
 
         # 2. 访问 ClawCloud 登录页（增加异常处理）
-        target_url = "https://ap-southeast-1.run.claw.cloud/"
+        target_url = "https://ap-northeast-1.run.claw.cloud/"
         print(f"✅ [Step 2] 正在访问: {target_url}")
         try:
             page.goto(target_url, timeout=30000)
@@ -224,31 +224,52 @@ def run_login():
             page.wait_for_url(lambda url: "run.claw.cloud" in url and "github.com" not in url, timeout=30000)
             # 等待页面完全加载（networkidle确保没有加载中的请求）
             page.wait_for_load_state("networkidle", timeout=20000)
-            # 额外等待2秒，确保动态内容渲染完成（避免加载圆圈）
-            time.sleep(2)
+            # 额外等待10秒，确保动态内容渲染完成（避免加载圆圈）
+            time.sleep(12)
             print("✅ ClawCloud 控制台加载完成")
+            
+            # ========== 新增：判断页面是否包含"wxk-in-git" ==========
+            print("✅ [Step 7.1] 检查页面是否包含 'wxk-in-git'...")
+            # 方式1：精准定位包含该文本的元素（推荐）
+            wxk_text_locator = page.get_by_text("wxk-in-git", exact=False)
+            # 等待元素出现（最多等待5秒）
+            try:
+                wxk_text_locator.wait_for(state="visible", timeout=5000)
+                has_wxk_text = wxk_text_locator.count() > 0
+            except PlaywrightTimeoutError:
+                # 超时说明未找到该文本
+                has_wxk_text = False
+            
+            if has_wxk_text:
+                print("✅ 页面中检测到 'wxk-in-git' 文本")
+            else:
+                print("❌ 页面中未检测到 'wxk-in-git' 文本")
+                # 可选：如果需要严格验证，这里可以直接退出
+                # exit(1)
+            # ======================================================
+            
         except PlaywrightTimeoutError:
-            print("⚠️ 控制台加载超时，但登录流程已完成，继续截图")
-            time.sleep(30)  # 兜底等待
+            print("⚠️ 控制台加载超时，但登录流程已完成，继续截图和检查")
+            time.sleep(3)  # 兜底等待
 
         final_url = page.url
         print(f"📌 最终页面 URL: {final_url}")
 
         # 8. 截图保存结果（核心优化：确保页面加载完成后截图）
         try:
-            time.sleep(30)  # 兜底等待
             page.screenshot(path="login_result.png", full_page=True)  # full_page=True截取整页
             print("📸 已保存结果截图: login_result.png")
         except Exception as e:
             print(f"⚠️ 截图失败: {str(e)}")
 
-        # 9. 验证是否成功
+        # 9. 验证是否成功（整合wxk-in-git判断）
         success_indicators = [
             page.get_by_text("App Launchpad").count() > 0,
             page.get_by_text("Devbox").count() > 0,
             "private-team" in final_url,
             "console" in final_url,
-            "signin" not in final_url and "github.com" not in final_url
+            "signin" not in final_url and "github.com" not in final_url,
+            has_wxk_text  # 新增：包含wxk-in-git作为成功指标之一
         ]
         is_success = any(success_indicators)
 
